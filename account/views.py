@@ -1,8 +1,7 @@
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
-from django.contrib.auth import authenticate, login
-from .forms import LoginForm, UserRegistrationForm, \
-                   UserEditForm, ProfileEditForm
+from django.contrib.auth import authenticate, login, logout
+from .forms import LoginForm, UserRegistrationForm, UserEditForm, ProfileEditForm
 from django.contrib.auth.decorators import login_required
 from .models import Profile, Contact
 from django.contrib import messages
@@ -35,6 +34,11 @@ def user_login(request):
         form = LoginForm()
     return render(request, 'account/login.html', {'form' : form})
 
+def logout_view(request):
+    logout(request)
+    return render(request, 'registration/logged_out.html')
+
+
 
 @login_required
 def dashboard(request):
@@ -57,11 +61,16 @@ def register(request):
         if user_form.is_valid():
             # Create a new user object but avoid saving it yet
             new_user = user_form.save(commit=False)
+
             # Set the password
             new_user.set_password(user_form.cleaned_data['password'])
+
             # Save the user object
             new_user.save()
+
+            # Create user profile
             Profile.objects.create(user=new_user)
+
             create_action(new_user, 'has created an account')
             return render(request,
                           'account/register_done.html',
